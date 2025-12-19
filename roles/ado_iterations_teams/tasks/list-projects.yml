@@ -1,0 +1,20 @@
+---
+- name: Log in and gather projects
+  uri: 
+    url: "https://dev.azure.com/{{ organization }}/_apis/projects?api-version=7.2-preview.4"
+    method: GET 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body_format: json 
+    return_content: yes 
+  register: result
+  tags: list_projects
+
+- name: Projects Lists
+  debug:
+    msg: "{{ item.name }}"
+  loop: "{{ result.json.value}}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: list_projects

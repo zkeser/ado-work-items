@@ -1,0 +1,11 @@
+- name: Updating Iterations and Teams in ADO
+  hosts: localhost
+  vars:
+    organization: "keserz"
+    pat: "{{ lookup('env', 'ADO_PAT') }}"
+  roles:
+    - role: ado_iterations_teams
+      tags:
+        - list_projects
+
+

@@ -1,0 +1,2 @@
+---
+- import_tasks: list-projects.yml
