@@ -1,2 +1,4 @@
 ---
 # defaults file for ado_iterations_teams
+organization: "keserz"
+pat: "{{ lookup('env', 'ADO_PAT') }}"
