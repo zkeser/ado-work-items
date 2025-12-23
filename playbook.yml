@@ -2,8 +2,8 @@
   hosts: localhost
 
   roles:
+    # List Projects 
     - role: ado_iterations_teams
-      tags:
-        - list_projects
+      
 
 

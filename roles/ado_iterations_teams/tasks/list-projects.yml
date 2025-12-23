@@ -11,10 +11,40 @@
   register: result
   tags: list_projects
 
-- name: Projects Lists
+# - name: Projects Lists
+#   debug:
+#     msg: 
+#       # {{ result.json.value }}
+#       - Project Name: "{{ item.name }}" 
+#       - Project ID: "{{ item.id }}"
+#   loop: "{{ result.json.value}}"
+#   loop_control:
+#     label: "{{ item.name }} {{ item.id}}"
+#   # tags: list_projects
+
+- name: Debug blacklist variable
   debug:
-    msg: "{{ item.name }}"
-  loop: "{{ result.json.value}}"
-  loop_control:
-    label: "{{ item.name }}"
+    var: ado_project_blacklist
+
+- name: Build Project Name → ID Map (excluding blacklisted IDs)
+  set_fact:
+    ado_project_ids: >-
+      {{
+        dict(
+          result.json.value
+          | rejectattr('id', 'in', ado_project_blacklist | default([]))
+          | map(attribute='name')
+          | zip(
+              result.json.value
+              | rejectattr('id', 'in', ado_project_blacklist | default([]))
+              | map(attribute='id')
+          )
+        )
+      }}
   tags: list_projects
+
+- name: Display Project Name from Ansible Facts
+  debug:
+    msg: '{{ ado_project_ids }}'
+  tags: list_projects
+    

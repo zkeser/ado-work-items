@@ -1,2 +1,8 @@
 ---
-- import_tasks: list-projects.yml
+- include_tasks: list-projects.yml
+  tags:
+    - list_projects
+
+- include_tasks: list-classification-nodes.yml
+  tags:
+    - list_classifications
