@@ -1,0 +1,27 @@
+-   children:
+    -   attributes:
+            finishDate: '2025-12-19T00:00:00Z'
+            startDate: '2025-12-15T00:00:00Z'
+        id: 11
+        identifier: 90ea3ecc-83ca-4945-a728-3d622a0f4a8a
+        name: Sprint 1
+        path: \AZ-400 Playground\Iteration\Sprint 1
+        url: https://dev.azure.com/keserz/b7d0863a-6743-4135-b79d-6af77f900b46/_apis/wit/classificationNodes/Iterations/Sprint%201
+    lower_level_children:
+    -   attributes:
+            finishDate: '2025-12-18T00:00:00Z'
+            startDate: '2025-12-16T00:00:00Z'
+        id: 14
+        identifier: 7a1a1bfa-b83e-4b2d-8cfa-1b82c3627a3c
+        name: Sprint 1 - A
+        path: \AZ-400 Playground\Iteration\Sprint 1\Sprint 1 - A
+        url: https://dev.azure.com/keserz/b7d0863a-6743-4135-b79d-6af77f900b46/_apis/wit/classificationNodes/Iterations/Sprint%201/Sprint%201%20-%20A
+    project: AZ-400 Playground
+    top_level:
+        attributes:
+            finishDate: '2025-12-31T00:00:00Z'
+            startDate: '2025-12-01T00:00:00Z'
+        id: 9
+        identifier: 08a7d882-b960-42b3-ae96-b4d96f2cc386
+        name: AZ-400 Playground
+        path: \AZ-400 Playground\Iteration

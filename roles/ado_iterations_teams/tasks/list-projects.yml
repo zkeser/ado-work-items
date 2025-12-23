@@ -45,6 +45,25 @@
 
 - name: Display Project Name from Ansible Facts
   debug:
-    msg: '{{ ado_project_ids }}'
+    msg: '{{ ado_project_ids}}'
   tags: list_projects
-    
+
+- name: Output Project Name to default vars file
+  blockinfile:
+    # block: |
+    #   ado_project_ids = {{ ado_project_ids.keys() | list | to_nice_yaml}}
+    block: |
+      ado_project_ids_list: 
+      {% for key in ado_project_ids.keys() %}
+       - {{ key }}
+      {% endfor %}
+    dest: "/home/ec2-user/ado-work-items/roles/ado_iterations_teams/vars/main.yml"
+    marker: "# {mark} ANSIBLE PROJECT IDS"
+  tags: list_projects
+
+# - name: Append Project Name to default vars file
+#   lineinfile:
+#     path: "/home/ec2-user/ado-work-items/roles/ado_iterations_teams/vars/main.yml"
+#     line: "ado_project_ids: [{{ ado_project_ids.keys() | join(', ') }}]"
+#     insertafter: EOF
+#   tags: list_projects

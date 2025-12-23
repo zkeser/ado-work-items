@@ -1,3 +1,6 @@
 $ set -a
 $ source <(ansible-vault view ./.env)
 $ set +a
+
+
+ yml2dot child_output.yml | dot -Tpng > deployment.png

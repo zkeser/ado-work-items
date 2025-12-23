@@ -1,0 +1,38 @@
+---
+- name: Log in and gather teams for all projects
+  uri: 
+    url: "https://dev.azure.com/{{ organization }}/_apis/projects/{{ item.value }}/teams?api-version=7.0"
+    method: GET 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body_format: json 
+    return_content: yes
+  loop: "{{ ado_project_ids | dict2items }}" 
+  register: teams_result
+  tags: list_teams
+
+# - name: Print teams_result
+#   debug:
+#     msg: "{{ teams_result.results.0.json.value }}"
+#   tags: list_teams
+
+# - name: Save the registered variable to a local YAML file
+#   ansible.builtin.copy:
+#       content: "{{ teams_result.results | to_nice_yaml(indent=4) }}"
+#       dest: "./teams_output.yml"
+#   tags: list_teams
+
+- name: Build Teams → set_fact Map
+  set_fact:
+    ado_teams: "{{ teams_result.results | map(attribute='json.value') | list | flatten }}"
+  tags: list_teams
+
+- name: Print teams fact
+  debug:
+    msg: "{{ item }}"
+  loop: "{{ ado_teams }}"
+  tags: list_teams
+
+
+    

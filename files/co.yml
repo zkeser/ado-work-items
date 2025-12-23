@@ -1,0 +1,27 @@
+name: AZ-400 Playground
+id: 9
+attributes:
+  startDate: '2025-12-01T00:00:00Z'
+  finishDate: '2025-12-31T00:00:00Z'
+children:
+  - name: Sprint 1
+    id: 11
+    attributes:
+      startDate: '2025-12-15T00:00:00Z'
+      finishDate: '2025-12-19T00:00:00Z'
+    children:
+      - name: Sprint 1 - A
+        id: 14
+        attributes:
+          startDate: '2025-12-16T00:00:00Z'
+          finishDate: '2025-12-18T00:00:00Z'
+      - name: Sprint 1 - B
+        id: 15
+        attributes:
+          startDate: '2025-12-16T00:00:00Z'
+          finishDate: '2025-12-18T00:00:00Z'
+      - name: Sprint 1 - C
+        id: 16
+        attributes:
+          startDate: '2025-12-16T00:00:00Z'
+          finishDate: '2025-12-18T00:00:00Z'

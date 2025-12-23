@@ -12,14 +12,22 @@
   register: all_iterations
   tags: list_classifications
 
-# - name: Print object as YAML
-#   debug:
-#     msg: "{{ all_iterations | to_nice_json }}"
+# - name: Save the registered variable to a local YAML file
+#   ansible.builtin.copy:
+#       content: "{{ all_iterations.results | to_nice_yaml(indent=4) }}"
+#       dest: "./iterations_output.yml"
+#   tags: list_classifications
 
-# - name: Print the set_facts for iterations
-#   debug:
-#     msg: '{{ item.json }}'
-#   loop: "{{ all_iterations.results}}"
+# - name: Save only iteration JSON per project
+#   ansible.builtin.copy:
+#     content: >-
+#       {{
+#         all_iterations.results
+#         | selectattr('json', 'defined')
+#         | map(attribute='json')
+#         | to_nice_yaml(indent=4)
+#       }}
+#     dest: "./iterations_output.yml"
 #   tags: list_classifications
 
 - name: Set fact with cleaner child data
@@ -27,33 +35,43 @@
     all_iterations_facts: >-
       {{ all_iterations_facts | default([]) + [{
           'project': item.item.key,
-          'parent': item.json.name,
-          'parent_id': item.json.id,
-          'parent_path': item.json.path,
-          'children': item.json.children | map(attribute='name') | list,
-          'child_details': item.json.children | map('dict2items') 
+
+          'top_level': {
+            'name': item.json.name,
+            'id': item.json.id,
+            'path': item.json.path,
+            'identifier': item.json.identifier,
+            'attributes': item.json.attributes | default({})
+          },
+
+          'children': (
+            item.json.children | default([])
+            | json_query('[].{id:id,identifier:identifier,name:name,path:path,url:url,attributes:attributes}')
+          ),
+
+          'lower_level_children': (
+            item.json.children | default([])
+            | json_query('[].children[].{id:id,identifier:identifier,name:name,path:path,url:url,attributes:attributes}')
+          )
       }] }}
   loop: "{{ all_iterations.results }}"
+  when:
+    - item.json is defined
+    - item.json.children is defined
   loop_control:
     label: "{{ item.item.key }}"
   tags: list_classifications
 
-- name: Print the set_facts for iterations
-  debug:
-    msg: > 
-      " Project: {{item.project }}"
-      " Parent Iteration: {{ item.parent }}"
-      " Parent ID: {{ item.parent_id }}"
-      "Parent Path: {{ item.parent_path }}"
-      " Children: {{ item.children | list}}"
-  loop: "{{ all_iterations_facts }}"
-  tags: list_classifications
-
-- name: Print the set_facts for iterations
-  debug:
-    msg: "Child Details:{{ item.child_details }}"
-  loop: "{{ all_iterations_facts }}"
-  tags: list_classifications
+# - name: Print the set_facts for iterations
+#   debug:
+#     msg: "{{ item }}"
+#     # msg: "{{ item.child_details }}"
+#   loop: "{{ all_iterations_facts }}"
+#   tags: list_classifications
 
 
-
+# - name: Save the registered variable to a local YAML file
+#   ansible.builtin.copy:
+#       content: "{{ all_iterations_facts | to_nice_yaml(indent=4) }}"
+#       dest: "./child_output.yml"
+#   tags: list_classifications

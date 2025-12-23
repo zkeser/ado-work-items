@@ -6,3 +6,7 @@
 - include_tasks: list-classification-nodes.yml
   tags:
     - list_classifications
+
+- include_tasks: list-teams.yml
+  tags:
+    - list_teams
