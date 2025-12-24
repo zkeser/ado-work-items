@@ -7,7 +7,6 @@ ado_project_blacklist:
 # BEGIN ANSIBLE PROJECT IDS
 ado_project_ids_list: 
  - AZ-400 Playground
- - azure-devops-kubernetes-terraform
 # END ANSIBLE PROJECT IDS
 
 #Top-level Sprint Iterations
