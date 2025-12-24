@@ -10,3 +10,7 @@
 - include_tasks: list-teams.yml
   tags:
     - list_teams
+
+- include_tasks: edit-create-sprints.yml
+  tags:
+    - patch/post_sprints

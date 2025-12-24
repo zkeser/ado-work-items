@@ -1,0 +1,38 @@
+---
+# - name: Read sprint variables
+#   debug:
+#     msg: "{{ ado_iterations_list  }}" 
+#   tags:
+#     - patch/post_sprints
+
+# - name: Read sprint variables2
+#   debug:
+#     msg: "{{ ado_child_iterations_list }}"
+#   tags:
+#     - patch/post_sprints
+
+- name: Build sprint URL list
+  set_fact:
+    sprint_urls: >-
+      {{ sprint_urls | default([]) + [{
+        'project': item.0.project,
+        'project_id': ado_project_ids[item.0.project],
+        'sprint_name': item.1.name,
+        'sprint_id': item.1.id
+      }] }}
+  loop: "{{ all_iterations_facts | subelements('children') }}"
+  loop_control:
+    label: "{{ item.0.project }}"
+
+- name: Print URLs for sprint creation
+  debug:
+    msg: "https://dev.azure.com/{{ organization }}/{{ item.project_id }}/_apis/wit/classificationnodes/iterations/{{ item.sprint_name | urlencode }}?api-version=7.0"
+  loop: "{{ sprint_urls }}"
+  loop_control:
+    label: "{{ item.project }} - {{ item.sprint_name }}"
+
+#Do a GET to check if sprint exists and has the correct attributes
+
+#Update existing sprint with attributes
+
+#Create new sprint with attributes

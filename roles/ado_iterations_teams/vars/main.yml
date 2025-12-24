@@ -1,10 +1,47 @@
 ---
 # vars file for ado_iterations_teams
 ## Black-listed projects
-ado_project_blacklist:
-  - 813e4c75-f058-4f2c-8e5e-c1442268973c
+# ado_project_blacklist:
+#   - 813e4c75-f058-4f2c-8e5e-c1442268973c
 
 # BEGIN ANSIBLE PROJECT IDS
 ado_project_ids_list: 
  - AZ-400 Playground
+ - azure-devops-kubernetes-terraform
 # END ANSIBLE PROJECT IDS
+
+#Top-level Sprint Iterations
+ado_iterations_list:
+  - iteration_name: "Sprint 1"
+    iteration_start_date: "2025-01-01"
+    iteration_end_date: "2025-12-31"
+  - iteration_name: "Sprint 2"
+    iteration_start_date: "2026-01-01"
+    iteration_end_date: "2026-12-31"
+
+#Child-Leaf Sprint Iterations
+ado_child_iterations_list:
+  - iteration_name: "Sprint 1 - A"
+    iteration_start_date: "2025-01-01"
+    iteration_end_date: "2025-02-01"
+    parent_iteration_name: "Sprint 1"
+  - iteration_name: "Sprint 1 - B"
+    iteration_start_date: "2025-02-02"
+    iteration_end_date: "2025-02-28"
+    parent_iteration_name: "Sprint 1"
+  - iteration_name: "Sprint 1 - C"
+    iteration_start_date: "2025-03-01"
+    iteration_end_date: "2025-03-31"
+    parent_iteration_name: "Sprint 1"
+  - iteration_name: "Sprint 2 - A"
+    iteration_start_date: "2026-01-01"
+    iteration_end_date: "2026-1-31"
+    parent_iteration_name: "Sprint 2"
+  - iteration_name: "Sprint 2 - B"
+    iteration_start_date: "2025-02-01"
+    iteration_end_date: "2025-02-28"
+    parent_iteration_name: "Sprint 2"
+  - iteration_name: "Sprint 2 - C"
+    iteration_start_date: "2025-03-01"
+    iteration_end_date: "2025-03-31"
+    parent_iteration_name: "Sprint 2"

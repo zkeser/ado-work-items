@@ -12,10 +12,11 @@
   register: all_iterations
   tags: list_classifications
 
+
 # - name: Save the registered variable to a local YAML file
 #   ansible.builtin.copy:
-#       content: "{{ all_iterations.results | to_nice_yaml(indent=4) }}"
-#       dest: "./iterations_output.yml"
+#       content: "{{ all_iterations.results.0.json | to_nice_yaml(indent=4) }}"
+#       dest: "./files/iterations_output.yml"
 #   tags: list_classifications
 
 # - name: Save only iteration JSON per project
@@ -62,16 +63,36 @@
     label: "{{ item.item.key }}"
   tags: list_classifications
 
+
 # - name: Print the set_facts for iterations
 #   debug:
-#     msg: "{{ item }}"
-#     # msg: "{{ item.child_details }}"
-#   loop: "{{ all_iterations_facts }}"
+#     msg: "Child: {{ child.name }} | Attributes: {{ child.attributes }}"
+#   loop: "{{ all_iterations_facts[0].children }}"
+#   loop_control:
+#     loop_var: child
+#   when: child.attributes is not none
+#   tags: list_classifications
+
+# - name: Print the set_facts for iterations
+#   debug:
+#     msg: "{{ item.top_level.name }} - Children: {{ item.children | map(attribute='name')  | list}}"
+#   loop: "{{ all_iterations_facts}}"
+#   tags: list_classifications
+
+# - name: Print top-level attributes
+#   debug:
+#     msg: "Top Level: {{ all_iterations_facts[0].top_level.name }} | Attributes: {{ all_iterations_facts[0].top_level.attributes }}"
 #   tags: list_classifications
 
 
 # - name: Save the registered variable to a local YAML file
 #   ansible.builtin.copy:
+#       content: "{{ all_iterations_facts | map(attribute='lower_level_children') | to_nice_yaml(indent=4) }}"
+#       dest: "/home/ec2-user/ado-work-items/files/child_output.yml"
+#   tags: list_classifications
+
+# - name: Save the registered variable to a local YAML file
+#   ansible.builtin.copy:
 #       content: "{{ all_iterations_facts | to_nice_yaml(indent=4) }}"
-#       dest: "./child_output.yml"
+#       dest: "/home/ec2-user/ado-work-items/files/child_output.yml"
 #   tags: list_classifications

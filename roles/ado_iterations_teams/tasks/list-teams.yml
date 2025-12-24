@@ -28,11 +28,11 @@
     ado_teams: "{{ teams_result.results | map(attribute='json.value') | list | flatten }}"
   tags: list_teams
 
-- name: Print teams fact
-  debug:
-    msg: "{{ item }}"
-  loop: "{{ ado_teams }}"
-  tags: list_teams
+# - name: Print teams fact
+#   debug:
+#     msg: "{{ item }}"
+#   loop: "{{ ado_teams }}"
+#   tags: list_teams
 
 
     
