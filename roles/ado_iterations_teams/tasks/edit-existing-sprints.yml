@@ -1,0 +1,227 @@
+---
+- name: Build sprint URL list
+  set_fact:
+    sprint_urls: >-
+      {{ sprint_urls | default([]) + [{
+        'project': item.0.project,
+        'project_id': ado_project_ids[item.0.project],
+        'sprint_name': item.1.name
+      }] }}
+  loop: "{{ all_iterations_facts | subelements('children') }}"
+  loop_control:
+    label: "{{ item.0.project }}"
+
+- name: Print URLs for sprint creation
+  debug:
+    msg: "https://dev.azure.com/{{ organization }}/{{ item.project_id }}/_apis/wit/classificationnodes/iterations/{{ item.sprint_name | urlencode }}?api-version=7.0"
+  loop: "{{ sprint_urls }}"
+  loop_control:
+    label: "{{ item.project }} - {{ item.sprint_name }}"
+
+
+#Do a GET to check if sprint exists and has the correct attributes
+- name: Output Project Name to default vars file
+  blockinfile:
+    block: |
+      ado_sprint_url_list: 
+      {% for item in sprint_urls %}
+       - "https://dev.azure.com/{{ organization }}/{{ item.project_id }}/_apis/wit/classificationnodes/iterations/{{ item.sprint_name | urlencode }}?api-version=7.0"
+      {% endfor%}
+    dest: "/home/ec2-user/ado-work-items/roles/ado_iterations_teams/vars/main.yml"
+    marker: "# {mark} ANSIBLE Sprint URLS"
+  tags: patch/post_sprints
+  loop: "{{ sprint_urls }}"
+  loop_control:
+    label: "{{ item.project }} - {{ item.sprint_name }}"
+
+
+#list sprint details to populate set_fact ado_sprint_info
+- name: Log in and gather list the sprint details
+  uri: 
+    url: "{{ item }}&$depth=20"
+    method: GET 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body_format: json 
+    return_content: yes 
+  register: sprint_result
+  tags: patch/post_sprints
+  loop: "{{ ado_sprint_url_list }}"
+
+# - name: Debug Sprint Results
+#   debug:
+#     var: sprint_result
+
+
+- name: Build Sprint Map 
+  set_fact:
+    ado_sprint_info: >-
+      {{ ado_sprint_info | default([]) + [{
+        'parent': item.json.name,
+        'children': item.json.children | default([]),
+        'sprint_url': item.url | replace('&$depth=20', ''),
+        'sprint_from_url': (
+          item.json.url
+          | split('/')
+          | last
+          | urldecode
+        )
+      }]  }}
+  loop: "{{ sprint_result.results }}"
+  loop_control:
+    label: "{{ item.json.name }}"
+  tags: patch/post_sprints
+
+#read sprint variable in ado_sprint_info
+- name: Read sprint variables in set_facts
+  debug:
+    msg: 
+      "{{ item }}"
+  loop: "{{ ado_sprint_info  }}"
+  tags: patch/post_sprints
+
+
+#Update existing parent sprint 
+- name: Log in and update parent sprint details
+  uri: 
+    url: "{{ item.0.sprint_url | trim}}"
+    method: PATCH 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body: 
+      attributes: 
+        startDate: "{{ item.1.iteration_start_date }}T00:00:00Z"
+        finishDate: "{{ item.1.iteration_end_date }}T23:59:59Z"
+    body_format: json
+    status_code:
+      - 200
+      - 204 
+    return_content: yes 
+  register: parent_result
+  # failed_when:
+  #   - parent_result.status not in [200, 201, 204]
+  #   - "'already exists' not in parent_result.json.message | default('')"
+  with_nested: 
+    - "{{ ado_sprint_info }}"
+    - "{{ ado_iterations_list  }}"
+  when: 
+    - item.0.sprint_from_url == item.1.iteration_name
+  tags: patch/post_sprints
+
+
+# Update existing leaf sprints 
+- name: Log in and update leaf sprint details
+  uri: 
+    url: "{{ item.0.url }}?api-version=7.0"
+    method: PATCH 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body: 
+      attributes: 
+        startDate: "{{ item.1.iteration_start_date }}T00:00:00Z"
+        finishDate: "{{ item.1.iteration_end_date }}T23:59:59Z"
+    body_format: json
+    status_code:
+      - 200
+      - 204 
+    return_content: yes 
+  with_nested: 
+    - "{{ ado_sprint_info | map(attribute='children') | flatten }}"
+    - "{{ ado_child_iterations_list }}"
+    - "{{ ado_sprint_info }}"
+  when: 
+    - item.0.name == item.1.iteration_name
+    - item.2.parent == item.1.parent_iteration_name
+  # register: leaf_result
+  # failed_when: 
+  #   - leaf_result.status not in [200, 201, 204]
+  #   - "'already exists' not in leaf_result.json.message | default('')"
+  tags: patch/post_sprints
+
+
+#create missing parent iterations with attributes
+
+- name: Extract list of existing iteration names
+  set_fact:
+    existing_parent_names: "{{ ado_sprint_info | map(attribute='parent') | list }}"
+# - debug:
+#     msg: "{{ existing_parent_names }}"
+#   tags: patch/post_sprints
+# - debug:
+#     msg: "{{ ado_sprint_info}}"
+#   tags: patch/post_sprints
+
+
+- name: Create new parent iteration details
+  uri: 
+    url: "https://dev.azure.com/{{ organization }}/{{ item.1.project_id }}/_apis/wit/classificationnodes/Iterations?api-version=7.0"
+    method: POST 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body: 
+      name: "{{ item.0.iteration_name }}"
+      attributes: 
+        startDate: "{{ item.0.iteration_start_date }}T00:00:00Z"
+        finishDate: "{{ item.0.iteration_end_date }}T23:59:59Z"
+    body_format: json
+    status_code:
+      - 200
+      - 204 
+    return_content: yes
+  register: create_parent_result
+  # FIX 2: Prevent the playbook from stopping if the sprint already exists
+  failed_when: 
+    - create_parent_result.status != 201
+    - create_parent_result.status != 200
+    - "'already in use' not in create_parent_result.json.message | default('')" 
+  with_cartesian:
+    - "{{ ado_iterations_list }}"
+    - "{{ sprint_urls }}"
+  when: 
+    # 2. Only act if the name is NOT found in the existing list
+    - item.0.iteration_name not in existing_parent_names
+  tags: patch/post_sprints
+
+
+#Create remaining leaf iterations with attributes
+- name: Create remaining leaf iterations with attributes
+  uri: 
+    # Create happens at the PARENT URL
+    url: "{{ item.0.sprint_url }}"
+    method: POST 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body: 
+      name: "{{ item.1.iteration_name }}"
+      attributes: 
+        startDate: "{{ item.1.iteration_start_date }}T00:00:00Z"
+        finishDate: "{{ item.1.iteration_end_date }}T23:59:59Z"
+    body_format: json
+    status_code: [201]
+    return_content: yes
+  with_nested: 
+    - "{{ ado_sprint_info }}"            
+    - "{{ ado_child_iterations_list }}"   
+  when: 
+    - item.0.parent == item.1.parent_iteration_name
+    - item.1.iteration_name not in item.0.children | map(attribute='name') | list
+  tags: patch/post_sprints
+  throttle: 1
+
+  # - name: Read sprint variables
+#   debug:
+#     msg: "{{ item.iteration_name }}" 
+#   tags:
+#     - patch/post_sprints
+#   loop: "{{ ado_iterations_list }}"
+
+# - name: Read sprint variables2
+#   debug:
+#     msg: "{{ ado_child_iterations_list }}"
+#   tags:
+#     - patch/post_sprints
