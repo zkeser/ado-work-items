@@ -112,7 +112,7 @@
 
 
 # Update existing leaf sprints 
-- name: Log in and update leaf sprint details
+- name: Update leaf sprint details
   uri: 
     url: "{{ item.0.url }}?api-version=7.0"
     method: PATCH 
@@ -141,56 +141,9 @@
   #   - "'already exists' not in leaf_result.json.message | default('')"
   tags: patch/post_sprints
 
-
-#create missing parent iterations with attributes
-
-- name: Extract list of existing iteration names
-  set_fact:
-    existing_parent_names: "{{ ado_sprint_info | map(attribute='parent') | list }}"
-# - debug:
-#     msg: "{{ existing_parent_names }}"
-#   tags: patch/post_sprints
-# - debug:
-#     msg: "{{ ado_sprint_info}}"
-#   tags: patch/post_sprints
-
-
-- name: Create new parent iteration details
-  uri: 
-    url: "https://dev.azure.com/{{ organization }}/{{ item.1.project_id }}/_apis/wit/classificationnodes/Iterations?api-version=7.0"
-    method: POST 
-    headers: 
-      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
-      Content-Type: "application/json" 
-    body: 
-      name: "{{ item.0.iteration_name }}"
-      attributes: 
-        startDate: "{{ item.0.iteration_start_date }}T00:00:00Z"
-        finishDate: "{{ item.0.iteration_end_date }}T23:59:59Z"
-    body_format: json
-    status_code:
-      - 200
-      - 204 
-    return_content: yes
-  register: create_parent_result
-  # FIX 2: Prevent the playbook from stopping if the sprint already exists
-  failed_when: 
-    - create_parent_result.status != 201
-    - create_parent_result.status != 200
-    - "'already in use' not in create_parent_result.json.message | default('')" 
-  with_cartesian:
-    - "{{ ado_iterations_list }}"
-    - "{{ sprint_urls }}"
-  when: 
-    # 2. Only act if the name is NOT found in the existing list
-    - item.0.iteration_name not in existing_parent_names
-  tags: patch/post_sprints
-
-
 #Create remaining leaf iterations with attributes
 - name: Create remaining leaf iterations with attributes
   uri: 
-    # Create happens at the PARENT URL
     url: "{{ item.0.sprint_url }}"
     method: POST 
     headers: 
@@ -212,6 +165,9 @@
     - item.1.iteration_name not in item.0.children | map(attribute='name') | list
   tags: patch/post_sprints
   throttle: 1
+
+#### Create Parent Iterations if they don't exist #####
+
 
   # - name: Read sprint variables
 #   debug:
