@@ -4,3 +4,6 @@ $ set +a
 
 
  yml2dot child_output.yml | dot -Tpng > deployment.png
+
+
+ ansible-playbook playbook.yml --flush-cache
