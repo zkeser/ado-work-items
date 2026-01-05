@@ -7,10 +7,18 @@
   tags:
     - list_classifications
 
-- include_tasks: list-teams.yml
-  tags:
-    - list_teams
+# - include_tasks: list-teams.yml
+#   tags:
+#     - list_teams
 
-- include_tasks: edit-existing-sprints.yml
+- include_tasks: create-missing-parents.yml
+  tags:
+    - post_parents
+
+# - include_tasks: list-classification-nodes.yml
+#   tags:
+#     - list_classifications
+
+- include_tasks: edit-leafs.yml
   tags:
     - patch/post_sprints

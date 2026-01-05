@@ -12,25 +12,6 @@
   register: all_iterations
   tags: list_classifications
 
-
-# - name: Save the registered variable to a local YAML file
-#   ansible.builtin.copy:
-#       content: "{{ all_iterations.results.0.json | to_nice_yaml(indent=4) }}"
-#       dest: "./files/iterations_output.yml"
-#   tags: list_classifications
-
-# - name: Save only iteration JSON per project
-#   ansible.builtin.copy:
-#     content: >-
-#       {{
-#         all_iterations.results
-#         | selectattr('json', 'defined')
-#         | map(attribute='json')
-#         | to_nice_yaml(indent=4)
-#       }}
-#     dest: "./iterations_output.yml"
-#   tags: list_classifications
-
 - name: Set fact with cleaner child data
   set_fact:
     all_iterations_facts: >-
@@ -63,26 +44,36 @@
     label: "{{ item.item.key }}"
   tags: list_classifications
 
-
-# - name: Save the registered variable to a local YAML file
-#   ansible.builtin.copy:
-#       content: "{{ item.children | map(attribute='name') | flatten | to_nice_yaml(indent=4) }}"
-#       dest: "/home/ec2-user/ado-work-items/files/child_output.yml"
-#   tags: list_classifications
-#   loop: "{{ all_iterations_facts }}"
-
-  #Do a GET to check if sprint exists and has the correct attributes
-- name: Output parent iterations to default vars file
-  blockinfile:
-    block: |
-      ado_parent_list: 
-      {% for item in all_iterations_facts %}
-      {{ item.children | map(attribute='name') | flatten | to_nice_yaml(indent=4) }}
-      {% endfor %}
-    dest: "/home/ec2-user/ado-work-items/roles/ado_iterations_teams/vars/main.yml"
-    marker: "# {mark} ANSIBLE Current Parents"
+  #Update existing parent sprint 
+- name: Create missing parent sprints
+  uri: 
+    url: "https://dev.azure.com/{{ organization }}/{{ item.0.value }}/_apis/wit/classificationnodes/iterations?$depth=10&api-version=7.1"
+    method: POST 
+    headers: 
+      Authorization: "Basic {{ (':' + pat) | b64encode }}" 
+      Content-Type: "application/json" 
+    body:
+      name: "{{ item.1.iteration_name }}" 
+      attributes: 
+        startDate: "{{ item.1.iteration_start_date }}T00:00:00Z"
+        finishDate: "{{ item.1.iteration_end_date }}T23:59:59Z"
+    body_format: json
+    status_code:
+      - 200
+      - 204 
+    return_content: yes 
+  register: new_parent_result
+  changed_when: new_parent_result.status != 409
+  failed_when: 
+    - new_parent_result.status != 409
+    - new_parent_result.status not in [200, 201, 204]
+  with_nested: 
+    - "{{ ado_project_ids | dict2items }}"
+    - "{{ ado_iterations_list  }}"
+  when: 
+    - item.1.iteration_name not in ado_parent_list
   tags: patch/post_sprints
-  loop: "{{ all_iterations_facts }}"
-  tags: list_classifications
 
+- debug:
+    msg: "{{ ado_iterations_list  }}"
 
